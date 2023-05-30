@@ -26,7 +26,7 @@ public:
         out << "ID:" << room.RoomID << endl << "Capacity:" << room.Capacity << endl<< "Price for night:" << room.Price << "$" << endl << "Availability:" << room.Available;
         return out;
     }
-}; // gotowe
+};
 
 class Address final{
 public:
@@ -45,7 +45,7 @@ public:
         return out;
     }
     inline friend bool operator==(Address &address1, Address &address2) { return address1.AdressInfo() == address2.AdressInfo(); }
-}; // gotowe
+};
 
 const int monthDays[12]
         = { 31, 28, 31, 30, 31, 30,
