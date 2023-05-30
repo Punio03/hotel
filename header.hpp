@@ -72,6 +72,7 @@ public:
         n2 += countLeapYears(date2);
         return (n2 - n1);
     }
+    inline friend ostream& operator<<(ostream& out, const DateTime &date) { return out << date.day << '.' << date.month << '.' << date.year << endl; }
 };
 
 class Client {
@@ -97,7 +98,16 @@ public:
     inline int SearchForRoom(int RoomID) { for(int i = 0;i<Rooms.size();i++){ if(Rooms[i].getRoomID()==RoomID){ return i; } } return -1; }
     inline friend ostream& operator<<(ostream& out, const Hotel &hotel) { for(auto room : hotel.Rooms){ out << room << endl; } return out; }
 };
-class Reservation {};
+class Reservation {
+private:
+    int id;
+    DateTime checkInDate;
+    DateTime checkOutDate;
+    Room room;
+public:
+    inline friend ostream& operator<<(ostream& out, const Reservation &res) { return out << "ID: " << res.id << endl << "Data zameldownia: " << checkInDate << endl << "Data wymeldowania: " << checkOutDate << endl << "--- Pokój ---" << endl << res.room << endl; }
+
+};
 class ReservationSystem {};
 class Application {};
 class Administrator {};
