@@ -105,6 +105,7 @@ private:
     DateTime checkOutDate;
     Room room;
 public:
+    inline Reservation(int id, DateTime checkInDate, DateTime checkOutDate, Room room) : id(id), checkInDate(checkInDate),checkOutDate(checkOutDate), room(room) {}
     inline friend ostream& operator<<(ostream& out, const Reservation &res) { return out << "ID: " << res.id << endl << "Data zameldownia: " << checkInDate << endl << "Data wymeldowania: " << checkOutDate << endl << "--- Pokój ---" << endl << res.room << endl; }
 
 };
