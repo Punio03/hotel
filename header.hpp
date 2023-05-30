@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
+#include <map>
 using namespace std;
 class Room final {
 private:
@@ -12,9 +13,6 @@ private:
     bool Available;
 public:
     inline Room(int newRoomID, int newCapacity, int newPrice, bool Available=true) noexcept : RoomID(newRoomID), Capacity(newCapacity), Price(newPrice), Available(Available) { }
-    inline Room(Room const &oldRoom) = default;
-    inline Room(Room &&oldRoom) = default;
-    inline ~Room() = default;
     inline int getRoomID() const noexcept { return this->RoomID; }
     inline int getCapacity() const noexcept { return this->Capacity; }
     inline int getPrice() const noexcept { return this->Price; }
@@ -36,9 +34,6 @@ public:
     string City;
     string TelephoneNumber;
     inline Address(string newCountry, string newStreetName, string newZipCode, string newCity, string newTelephoneNumber) noexcept : Country(newCountry), StreetName(newStreetName), ZipCode(newZipCode), City(newCity), TelephoneNumber(newTelephoneNumber) { }
-    inline Address(Address const  &adress) = default;
-    inline Address(Address &&adress) = default;
-    inline ~Address() = default;
     inline vector<string> AdressInfo() { return { this->Country,this->StreetName, this->ZipCode, this->City, this->TelephoneNumber }; }
     inline friend ostream& operator<<(ostream& out, const Address &address) noexcept {
         out << "Country:" << address.Country << endl << "StreetName:" << address.StreetName << endl << "ZipCode:" << address.ZipCode << endl << "City:" << address.City << endl << "Telephone Number:" << address.TelephoneNumber << endl;
@@ -82,9 +77,11 @@ class Client {
 class Opinion {
 
 };
+
 class Restauration {
 
 };
+
 class Hotel {
 private:
     string Name;
@@ -106,15 +103,23 @@ private:
     Room room;
 public:
     inline Reservation(int id, DateTime checkInDate, DateTime checkOutDate, Room room) : id(id), checkInDate(checkInDate),checkOutDate(checkOutDate), room(room) {}
-    inline friend ostream& operator<<(ostream& out, const Reservation &res) { return out << "ID: " << res.id << endl << "Data zameldownia: " << checkInDate << endl << "Data wymeldowania: " << checkOutDate << endl << "--- Pokój ---" << endl << res.room << endl; }
+    inline friend ostream& operator<<(ostream& out, const Reservation &res) { return out << "ID: " << res.id << endl << "Data zameldownia: " << res.checkInDate << endl << "Data wymeldowania: " << res.checkOutDate << endl << "--- Pokój ---" << endl << res.room << endl; }
 
 };
+
 class ReservationSystem {};
 class Application {};
 class Administrator {};
 class Invoice {};
 class Order {};
-class Menu {};
+class Menu {
+private:
+    map<string,double> prices;
+public:
+    inline void AddToMenu(string name, double price){ prices.insert({name,price}); }
+    inline void RemoveFromMenu(string name) { prices.erase(name); }
+    inline double CheckPrice(string name) { prices.at(name); }
+};
 class Services {};
 class AdditionalServices {};
 #endif //UNTITLED1_HEADER_HPP
