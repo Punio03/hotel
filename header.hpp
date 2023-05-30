@@ -2,6 +2,7 @@
 #define UNTITLED1_HEADER_HPP
 #include <iostream>
 #include <vector>
+#include <chrono>
 using namespace std;
 class Room final {
 private:
@@ -25,7 +26,8 @@ public:
         out << "ID:" << room.RoomID << endl << "Capacity:" << room.Capacity << endl<< "Price for night:" << room.Price << "$" << endl << "Availability:" << room.Available;
         return out;
     }
-}; // gotowe
+};
+
 class Address final{
 public:
     string Country;
@@ -43,7 +45,39 @@ public:
         return out;
     }
     inline friend bool operator==(Address &address1, Address &address2) { return address1.AdressInfo() == address2.AdressInfo(); }
-}; // gotowe
+};
+
+const int monthDays[12]
+        = { 31, 28, 31, 30, 31, 30,
+            31, 31, 30, 31, 30, 31 };
+
+class DateTime final {
+private:
+    int year;
+    int day;
+    int month;
+    inline static int countLeapYears(DateTime date){
+        int years = date.year;
+        if (date.month <= 2) years--;
+        return years / 4 - years / 100 + years / 400;
+    }
+public:
+    inline DateTime(int year, int month, int day) noexcept : year(year), day(day), month(month) { }
+    inline friend int operator-(DateTime &date1, DateTime &date2) {
+        long int n1 = date1.year * 365 + date1.day;
+        for (int i = 0; i < date1.month - 1; i++) n1 += monthDays[i];
+        n1 += countLeapYears(date1);
+        long int n2 = date2.year * 365 + date2.day;
+        for (int i = 0; i < date2.month - 1; i++) n2 += monthDays[i];
+        n2 += countLeapYears(date2);
+        return (n2 - n1);
+    }
+};
+
+class Client {
+
+};
+
 class Opinion {
 
 };
@@ -63,7 +97,6 @@ public:
     inline int SearchForRoom(int RoomID) { for(int i = 0;i<Rooms.size();i++){ if(Rooms[i].getRoomID()==RoomID){ return i; } } return -1; }
     inline friend ostream& operator<<(ostream& out, const Hotel &hotel) { for(auto room : hotel.Rooms){ out << room << endl; } return out; }
 };
-class Client {};
 class Reservation {};
 class ReservationSystem {};
 class Application {};
@@ -71,7 +104,6 @@ class Administrator {};
 class Invoice {};
 class Order {};
 class Menu {};
-class Date {};
 class Services {};
 class AdditionalServices {};
 #endif //UNTITLED1_HEADER_HPP

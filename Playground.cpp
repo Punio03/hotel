@@ -5,5 +5,8 @@ int main(void){
         Room temp(i,3,320);
         cout << temp << endl;
     }
+    DateTime data1(2003,12,23);
+    DateTime data2(2003,12,30);
+    cout << data2 - data1;
     return 0;
 }
