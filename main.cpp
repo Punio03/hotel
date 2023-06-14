@@ -1,5 +1,6 @@
 #include "header.hpp"
 
 int main() {
-    return 0;
+    Menu fef{{{"olej",157}, {"kaszanka", 162}}};
+    cout << fef;
 }
