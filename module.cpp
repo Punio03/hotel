@@ -35,7 +35,7 @@ ostream& operator << (ostream& out, const Client &client) {
     out << "Name: " << client.name << endl
         << "Surname: " << client.surname << endl
         << "----- Reservations -----" << endl;
-    for (const auto& reservation : client.reservations) out << reservation << endl;
+    for (const auto& reservation : client.reservations) out << *reservation << endl;
     return out << *client.invoice;
 }
 
@@ -44,6 +44,15 @@ ostream& operator << (ostream& out, const Opinion &opinion) {
                << "Comment: " << opinion.comment << endl
                << "Client ID: " << (opinion.client).getID() << endl
                << "Reservation ID: " << (opinion.reservation)->getID() << endl;
+}
+
+double Menu::checkPrice(const std::string &name) {
+    try {
+        double price = prices.at(name);
+        return price;
+    } catch (out_of_range e) {
+        return 0;
+    }
 }
 
 ostream& operator << (ostream& out, const Menu &menu) {
@@ -55,9 +64,24 @@ ostream& operator << (ostream& out, const Menu &menu) {
     return out;
 }
 
+Order::Order(const string& name, Hotel *hotel, bool done) : done(done), hotel(hotel) {
+    Menu m = hotel->getRestaurant().getMenu();
+    AdditionalServices as = hotel->getServices().getMenu();
+    double price = m.checkPrice(name);
+    if (price == 0) as.checkPrice(name);
+    if (price == 0) position = {"Wrong position!", 0};
+    else position = {name, price};
+}
+
+ostream& operator << (ostream& out, const Order &order) {
+    return out << order.position.first << " "
+               << order.position.second << "$" << endl;
+}
+
 Order Restaurant::doOrder() {
     Order o = orders.top();
     orders.pop();
+    o.setDone(true);
     return o;
 }
 
@@ -68,6 +92,19 @@ int Hotel::searchForRoom(int roomID) {
 
 ostream& operator << (ostream& out, const Hotel &hotel) {
     for(auto room : hotel.rooms) out << room << endl;
+    return out;
+}
+
+void Invoice::addOrder(const string& name, Hotel* hotel) {
+    Order o{name,hotel};
+    wholePrice += o.getPrice();
+    orders.emplace_back(o);
+}
+
+ostream& operator<<(ostream& out, const Invoice &invoice) {
+    out << "----- Invoice -----" << endl;
+    out << "Whole price: " << invoice.wholePrice << "$" << endl;
+    for(const auto& order : invoice.orders) out << order;
     return out;
 }
 
