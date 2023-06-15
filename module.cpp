@@ -1,5 +1,6 @@
 #include "header.hpp"
 
+//room
 ostream& operator << (ostream& out, const Room &room) {
     return out << "ID: " << room.roomID << endl
                << "Capacity: " << room.capacity << endl
@@ -7,6 +8,7 @@ ostream& operator << (ostream& out, const Room &room) {
                << "Available: " << ((room.available) ? "true" : "false") << endl;
 }
 
+//address
 ostream& operator << (ostream& out, const Address &address) {
     return out << "Country: " << address.country << endl
                << "Street name: " << address.streetName << endl
@@ -39,11 +41,31 @@ ostream& operator << (ostream& out, const Client &client) {
     return out << *client.invoice;
 }
 
+void Client::addOrder(const std::string& name, int reservationID) {
+    for (auto reservation : reservations) {
+        if (reservation->getID() == reservationID) {
+            Hotel h{reservation->getHotel()};
+            invoice->addOrder(name, &h);
+            return;
+        }
+    }
+}
+
+void Client::addOpinion(int rating, std::string comment, int reservationID) {
+    for (auto reservation : reservations) {
+        if (reservation->getID() == reservationID) {
+            Hotel h{reservation->getHotel()};
+            h.addOpinion({rating,comment, id, reservationID});
+            return;
+        }
+    }
+}
+
 ostream& operator << (ostream& out, const Opinion &opinion) {
     return out << "Rating: " << opinion.rating << endl
                << "Comment: " << opinion.comment << endl
-               << "Client ID: " << (opinion.client).getID() << endl
-               << "Reservation ID: " << (opinion.reservation)->getID() << endl;
+               << "Client ID: " << opinion.clientID << endl
+               << "Reservation ID: " << opinion.reservationID << endl;
 }
 
 double Menu::checkPrice(const std::string &name) {
@@ -68,9 +90,17 @@ Order::Order(const string& name, Hotel *hotel, bool done) : done(done), hotel(ho
     Menu m = hotel->getRestaurant().getMenu();
     AdditionalServices as = hotel->getServices().getMenu();
     double price = m.checkPrice(name);
-    if (price == 0) as.checkPrice(name);
+    if (price == 0) price = as.checkPrice(name);
+    else {
+        hotel->getRestaurant().addOrder({name, hotel});
+        position = {name,price};
+        return;
+    }
     if (price == 0) position = {"Wrong position!", 0};
-    else position = {name, price};
+    else {
+        hotel->getServices().addOrder({name, hotel});
+        position = {name,price};
+    }
 }
 
 ostream& operator << (ostream& out, const Order &order) {

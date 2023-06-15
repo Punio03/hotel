@@ -97,7 +97,8 @@ public:
     void setID(int newID) { id = newID; }
     void setReservations(vector<Reservation*> newReservations) { reservations = std::move(newReservations); }
     void setInvoice(Invoice* newInvoice) { invoice = newInvoice; }
-
+    void addOrder(const string& name, int reservationID);
+    void addOpinion(int rating, string comment, int reservationID);
     friend ostream& operator << (ostream& out, const Client &client);
 };
 
@@ -105,19 +106,19 @@ class Opinion final {
 private:
     int rating;
     string comment;
-    Client client;
-    Reservation* reservation;
+    int clientID;
+    int reservationID;
 public:
-    Opinion(int rating, string comment, Client client, Reservation* reservation) : rating(rating), comment(std::move(comment)),
-                                                                                   client(std::move(client)), reservation(reservation) {}
+    Opinion(int rating, string comment, int clientID, int reservationID) : rating(rating), comment(std::move(comment)),
+                                                                                   clientID(clientID), reservationID(reservationID) {}
     [[nodiscard]] int getRating() const { return rating; }
     string getComment() { return comment; }
-    Client getClient() { return client; }
-    Reservation* getReservation() { return reservation; }
+    int getClientID() { return clientID; }
+    int getReservationID() { return reservationID; }
     void setRating(int newRating) { rating = newRating; }
     void setComment(string newComment) { comment = std::move(newComment); }
-    void setClient(Client newClient) { client = std::move(newClient); }
-    void setReservation(Reservation* newReservation) { reservation = newReservation; }
+    void setClient(int newClientID) { clientID = newClientID; }
+    void setReservation(int newReservationID) { reservationID = newReservationID; }
     friend ostream& operator << (ostream& out, const Opinion &opinion);
 }; //✅
 
@@ -175,6 +176,7 @@ public:
                                                                                                                services(std::move(services)) {}
     Services getServices() { return services; }
     Restaurant getRestaurant() { return restaurant; }
+    void addOpinion(const Opinion &op) { opinions.emplace_back(op); }
     void addRoom(const Room &newRoom){ rooms.push_back(newRoom); }
     int searchForRoom(int roomID);
     friend ostream& operator<<(ostream& out, const Hotel &hotel);
@@ -200,9 +202,11 @@ private:
     DateTime checkOutDate;
     vector<Room> rooms;
     Invoice invoice;
+    Hotel hotel;
 public:
-    Reservation(int id, DateTime checkInDate, DateTime checkOutDate, vector<Room> rooms, Invoice inv) : id(id), checkInDate(checkInDate),checkOutDate(checkOutDate), rooms(rooms), invoice(inv) {}
+    Reservation(int id, DateTime checkInDate, DateTime checkOutDate, vector<Room> rooms, Invoice inv, Hotel hotel) : id(id), checkInDate(checkInDate),checkOutDate(checkOutDate), rooms(rooms), invoice(inv), hotel(hotel) {}
     int getID() const { return id; }
+    Hotel getHotel() { return hotel; }
     inline friend ostream& operator << (ostream& out, const Reservation &res);
 };
 
@@ -219,7 +223,7 @@ private:
     string login;
     string password;
 public:
-    Administrator(string login, string password) : login(move(login)), password(move(password)) {};
+    Administrator(string login, string password) : login(std::move(login)), password(std::move(password)) {};
     void addHotel(Hotel hotel, ReservationSystem rs);
     Hotel removeHotel(string name);
 };
