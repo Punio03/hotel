@@ -178,6 +178,7 @@ public:
     void addRoom(const Room &newRoom){ rooms.push_back(newRoom); }
     int searchForRoom(int roomID);
     friend ostream& operator<<(ostream& out, const Hotel &hotel);
+    // zmiana :D
 };
 
 class Invoice final {

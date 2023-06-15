@@ -108,7 +108,7 @@ ostream& operator << (ostream& out, const Invoice &invoice) {
     return out;
 }
 
-
+// zmiana :D
 ostream& operator << (ostream &out, const Reservation &res) {
     return out << "ID: " << res.id << endl
     << "Data zameldownia: " << res.checkInDate << endl
