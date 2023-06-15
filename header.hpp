@@ -6,11 +6,13 @@
 #include <map>
 #include <stack>
 #include <iomanip>
+#include <fstream>
 using namespace std;
 
 class Reservation;
 class Invoice;
 class Hotel;
+class Administrator;
 
 class Room final {
 private:
@@ -85,7 +87,7 @@ private:
     vector<Reservation*> reservations;
     Invoice* invoice;
 public:
-    Client(string name, string surname, int id, vector<Reservation*> reservations, Invoice* invoice) : name(std::move(name)), surname(std::move(surname)), id(id),
+    Client(string name, string surname, int id, Invoice* invoice, vector<Reservation*> reservations = {}) : name(std::move(name)), surname(std::move(surname)), id(id),
                                                                                                       reservations(std::move(reservations)), invoice(invoice) {}
     string getName() { return name; }
     string getSurname() { return surname; }
@@ -126,7 +128,7 @@ class Menu final {
 private:
     map<string,double> prices;
 public:
-    explicit Menu(map<string,double> prices) : prices(std::move(prices)) {}
+    Menu(map<string,double> prices = {}) : prices(std::move(prices)) {}
     void addToMenu(const string& name, double price) { prices.insert({name,price}); }
     void removeFromMenu(const string& name) { prices.erase(name); }
     double checkPrice(const string& name);
@@ -152,7 +154,7 @@ private:
     Menu menu;
     stack<Order> orders;
 public:
-    Restaurant(Menu menu, stack<Order> orders) : menu(std::move(menu)), orders(std::move(orders)) {}
+    Restaurant(Menu menu = {}, stack<Order> orders = {}) : menu(std::move(menu)), orders(std::move(orders)) {}
     Menu getMenu() { return menu; }
     Order doOrder();
     void addOrder(const Order& order) { orders.push(order); }
@@ -170,16 +172,17 @@ private:
     Restaurant restaurant;
     Services services;
 public:
-    Hotel(string name, Address address, vector<Room> rooms, vector<Opinion> opinions, Restaurant restaurant, Services services) : name(std::move(name)), hotelAddress(std::move(address)),
+    Hotel(string name, Address address, Restaurant restaurant, Services services, vector<Room> rooms = {}, vector<Opinion> opinions = {}) : name(std::move(name)), hotelAddress(std::move(address)),
                                                                                                                rooms(std::move(rooms)), opinions(std::move(opinions)),
                                                                                                                restaurant(std::move(restaurant)),
                                                                                                                services(std::move(services)) {}
     Services getServices() { return services; }
     Restaurant getRestaurant() { return restaurant; }
     string getName() { return name; }
-    void changeAvailbility(int roomID) { for(auto room : rooms) if (room.getRoomID() == roomID) room.setAvailable(false);}
+    void changeAv(int roomID) { for(auto room : rooms) if (room.getRoomID() == roomID) room.setAvailable(false);}
     Room* findEmpty() { for (auto room : rooms) if (room.getAvailable() == true) return &room; return NULL; }
     void addOpinion(const Opinion &op) { opinions.emplace_back(op); }
+    vector<Room> getRooms() { return rooms; }
     void addRoom(const Room &newRoom){ rooms.push_back(newRoom); }
     int searchForRoom(int roomID);
     friend ostream& operator<<(ostream& out, const Hotel &hotel);
@@ -212,14 +215,14 @@ public:
 
 class ReservationSystem {
 private:
-    vector<Hotel> hotels;
+    vector<Hotel*> hotels;
     vector<Reservation> reservations;
 public:
-    ReservationSystem(vector<Hotel> hotel = {}, vector<Reservation> res = {}) : hotels(hotel), reservations(res) {}
-    void addHotel(Hotel hotel){ hotels.emplace_back(hotel); }
+    ReservationSystem(vector<Hotel*> hotel = {}, vector<Reservation> res = {}) : hotels(hotel), reservations(res) {}
+    void addHotel(Hotel *hotel){ hotels.emplace_back(hotel); }
     void removeHotel(string name) {
         for (auto it = hotels.begin(); it != hotels.end(); it++){
-            if((*it).getName() == name){
+            if((*it)->getName() == name){
                 hotels.erase(it);
                 return;
             }
@@ -227,8 +230,8 @@ public:
     }
     Room findRoom(string name){
         for (auto hotel : hotels){
-            if (hotel.getName() == name){
-                Room* emptyRoom = hotel.findEmpty();
+            if (hotel->getName() == name){
+                Room* emptyRoom = hotel->findEmpty();
                 if(emptyRoom != NULL){
                     return *emptyRoom;
                 }else{
@@ -244,63 +247,46 @@ public:
 
     void reservateRoom(int roomID, string name, Client client, DateTime checkin, DateTime checkout) {
         for (auto hotel : hotels){
-            if(hotel.getName() == name){
-                hotel.changeAvailbility(roomID);
-                Room room = hotel.searchForRoom(roomID);
+            if(hotel->getName() == name){
+                hotel->changeAv(roomID);
+                vector<Room> vec = hotel->getRooms();
+                Room room = vec[hotel->searchForRoom(roomID)];
+                Reservation newReservation = Reservation(reservations.size()+1,checkin,checkout,room,Invoice(),*hotel);
+                reservations.emplace_back(newReservation);
+                return;
             }
         }
-
-        Reservation newReservation = Reservation(reservations.size()+1,checkin,checkout,)
     }
-};
-
-class Application {
-
 };
 
 class Administrator final {
 private:
+    string login = "John Doe";
+    string password = "1234";
+public:
+    Administrator() = default;
+    string getLogin() { return login; }
+    string getPassword() { return password; }
+    void addHotel(Hotel *hotel, ReservationSystem rs) { rs.addHotel(hotel); }
+    void removeHotel(string name, ReservationSystem rs){ rs.removeHotel(name); }
+};
+
+class Application final {
+private:
+    Administrator admin;
+    ReservationSystem rs;
     string login;
     string password;
 public:
-    Administrator(string login, string password) : login(std::move(login)), password(std::move(password)) {};
-    void addHotel(Hotel hotel, ReservationSystem rs);
-    Hotel removeHotel(string name);
-};
-
-
-//https://stackoverflow.com/a/14861289 funkcja do centrowania outputu
-template<typename charT, typename traits = std::char_traits<charT> >
-class center_helper {
-    std::basic_string<charT, traits> str_;
-public:
-    explicit center_helper(std::basic_string<charT, traits> str) : str_(std::move(str)) {}
-    template<typename a, typename b>
-    friend std::basic_ostream<a, b>& operator<<(std::basic_ostream<a, b>& s, const center_helper<a, b>& c);
-};
-
-template<typename charT, typename traits = std::char_traits<charT> >
-center_helper<charT, traits> centered(std::basic_string<charT, traits> str) {
-    return center_helper<charT, traits>(str);
-}
-
-center_helper<std::string::value_type, std::string::traits_type> centered(const std::string& str) {
-    return center_helper<std::string::value_type, std::string::traits_type>(str);
-}
-
-template<typename charT, typename traits>
-std::basic_ostream<charT, traits>& operator<<(std::basic_ostream<charT, traits>& s, const center_helper<charT, traits>& c) {
-    std::streamsize w = s.width();
-    if (w > c.str_.length()) {
-        std::streamsize left = (w + c.str_.length()) / 2;
-        s.width(left);
-        s << c.str_;
-        s.width(w - left);
-        s << "";
-    } else {
-        s << c.str_;
+    Application(string login, string password, ReservationSystem rs, Administrator admin) : login(std::move(login)), password(std::move(password)), rs(rs)
+                                                                                            , admin(admin) {};
+    int commands(){
+        if( login != admin.getLogin() || password != admin.getPassword()){
+            cout << "Wrong login details!" << endl;
+        }
+        //mozna pisac komendy...
+        return 0;
     }
-    return s;
-}
+};
 
 #endif //UNTITLED1_HEADER_HPP

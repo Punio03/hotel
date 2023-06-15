@@ -80,8 +80,8 @@ double Menu::checkPrice(const std::string &name) {
 ostream& operator << (ostream& out, const Menu &menu) {
     out << "----- Name ----- | ----- Price -----" << endl;
     for(const auto& n : menu.prices) {
-        out << setw(16) << centered(n.first);
-        out << " | " << setw(17) << centered(to_string(n.second));
+        out << setw(16) << n.first;
+        out << " | " << setw(17) << (to_string(n.second));
     }
     return out;
 }
@@ -142,5 +142,5 @@ ostream& operator << (ostream &out, const Reservation &res) {
     return out << "ID: " << res.id << endl
     << "Data zameldownia: " << res.checkInDate << endl
     << "Data wymeldowania: " << res.checkOutDate << endl
-    << "--- Pokoje ---" << endl << &res.rooms << endl;
+    << "--- Pokoje ---" << endl << &res.room << endl;
 }
