@@ -101,7 +101,7 @@ void Invoice::addOrder(const string& name, Hotel* hotel) {
     orders.emplace_back(o);
 }
 
-ostream& operator<<(ostream& out, const Invoice &invoice) {
+ostream& operator << (ostream& out, const Invoice &invoice) {
     out << "----- Invoice -----" << endl;
     out << "Whole price: " << invoice.wholePrice << "$" << endl;
     for(const auto& order : invoice.orders) out << order;
@@ -109,3 +109,9 @@ ostream& operator<<(ostream& out, const Invoice &invoice) {
 }
 
 
+ostream& operator << (ostream &out, const Reservation &res) {
+    return out << "ID: " << res.id << endl
+    << "Data zameldownia: " << res.checkInDate << endl
+    << "Data wymeldowania: " << res.checkOutDate << endl
+    << "--- Pokoje ---" << endl << &res.rooms << endl;
+}

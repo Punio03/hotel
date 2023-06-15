@@ -6,7 +6,6 @@
 #include <map>
 #include <stack>
 #include <iomanip>
-#include <format>
 using namespace std;
 
 class Reservation;
@@ -68,9 +67,9 @@ private:
     static int countLeapYears(DateTime date);
 public:
     DateTime(int year, int month, int day) : year(year), day(day), month(month) {}
-    int getYear() const { return year; }
-    int getDay() const { return day; }
-    int getMonth() const { return month; }
+    [[nodiscard]] int getYear() const { return year; }
+    [[nodiscard]] int getDay() const { return day; }
+    [[nodiscard]] int getMonth() const { return month; }
     void setYear(int newYear) { year = newYear; }
     void setDay(int newDay) { day = newDay; }
     void setMonth(int newMonth) { month = newMonth; }
@@ -78,7 +77,7 @@ public:
     friend ostream& operator << (ostream& out, const DateTime &date) { return out << date.day << '.' << date.month << '.' << date.year << endl; }
 }; //✅
 
-class Client {
+class Client final {
 private:
     string name;
     string surname;
@@ -90,7 +89,7 @@ public:
                                                                                                       reservations(std::move(reservations)), invoice(invoice) {}
     string getName() { return name; }
     string getSurname() { return surname; }
-    int getID() const { return id; }
+    [[nodiscard]] int getID() const { return id; }
     vector<Reservation*> getReservations() { return reservations; }
     Invoice* getInvoice() { return invoice; }
     void setName(string newName) { name = std::move(newName); }
@@ -111,7 +110,7 @@ private:
 public:
     Opinion(int rating, string comment, Client client, Reservation* reservation) : rating(rating), comment(std::move(comment)),
                                                                                    client(std::move(client)), reservation(reservation) {}
-    int getRating() const { return rating; }
+    [[nodiscard]] int getRating() const { return rating; }
     string getComment() { return comment; }
     Client getClient() { return client; }
     Reservation* getReservation() { return reservation; }
@@ -135,7 +134,7 @@ public:
 
 using AdditionalServices = Menu; //✅
 
-class Order {
+class Order final {
 private:
     Hotel* hotel;
     pair<string,double> position;
@@ -145,7 +144,7 @@ public:
     double getPrice() const { return position.second; }
     void setDone(bool newDone) { done = newDone; }
     friend ostream& operator << (ostream& out, const Order &order);
-};
+}; //✅
 
 class Restaurant final {
 private:
@@ -157,11 +156,11 @@ public:
     Order doOrder();
     void addOrder(const Order& order) { orders.push(order); }
     friend ostream& operator << (ostream& out, const Restaurant &restaurant) { return out << restaurant.menu << endl; }
-}; //G
+}; //✅
 
 using Services = Restaurant; //✅
 
-class Hotel {
+class Hotel final {
 private:
     string name;
     Address hotelAddress;
@@ -173,7 +172,7 @@ public:
     Hotel(string name, Address address, vector<Room> rooms, vector<Opinion> opinions, Restaurant restaurant, Services services) : name(std::move(name)), hotelAddress(std::move(address)),
                                                                                                                rooms(std::move(rooms)), opinions(std::move(opinions)),
                                                                                                                restaurant(std::move(restaurant)),
-                                                                                                                                  services(std::move(services)) {}
+                                                                                                               services(std::move(services)) {}
     Services getServices() { return services; }
     Restaurant getRestaurant() { return restaurant; }
     void addRoom(const Room &newRoom){ rooms.push_back(newRoom); }
@@ -193,7 +192,7 @@ public:
 
 };
 
-class Reservation {
+class Reservation final {
 private:
     int id;
     DateTime checkInDate;
@@ -203,12 +202,26 @@ private:
 public:
     Reservation(int id, DateTime checkInDate, DateTime checkOutDate, vector<Room> rooms, Invoice inv) : id(id), checkInDate(checkInDate),checkOutDate(checkOutDate), rooms(rooms), invoice(inv) {}
     int getID() const { return id; }
-    inline friend ostream& operator<<(ostream& out, const Reservation &res) { return out << "ID: " << res.id << endl << "Data zameldownia: " << res.checkInDate << endl << "Data wymeldowania: " << res.checkOutDate << endl << "--- Pokoje ---" << endl << &res.rooms << endl; }
-}; // G
+    inline friend ostream& operator << (ostream& out, const Reservation &res);
+};
 
-class ReservationSystem {};
-class Application {};
-class Administrator {};
+class ReservationSystem {
+
+};
+
+class Application {
+
+};
+
+class Administrator final {
+private:
+    string login;
+    string password;
+public:
+    Administrator(string login, string password) : login(move(login)), password(move(password)) {};
+    void addHotel(Hotel hotel, ReservationSystem rs);
+    Hotel removeHotel(string name);
+};
 
 
 //https://stackoverflow.com/a/14861289 funkcja do centrowania outputu
