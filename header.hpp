@@ -176,11 +176,13 @@ public:
                                                                                                                services(std::move(services)) {}
     Services getServices() { return services; }
     Restaurant getRestaurant() { return restaurant; }
+    string getName() { return name; }
+    void changeAvailbility(int roomID) { for(auto room : rooms) if (room.getRoomID() == roomID) room.setAvailable(false);}
+    Room* findEmpty() { for (auto room : rooms) if (room.getAvailable() == true) return &room; return NULL; }
     void addOpinion(const Opinion &op) { opinions.emplace_back(op); }
     void addRoom(const Room &newRoom){ rooms.push_back(newRoom); }
     int searchForRoom(int roomID);
     friend ostream& operator<<(ostream& out, const Hotel &hotel);
-    // zmiana :D
 };
 
 class Invoice final {
@@ -191,8 +193,6 @@ public:
     explicit Invoice(vector<Order> orders = {}, double wholePrice = 0) : orders(std::move(orders)), wholePrice(wholePrice) {}
     void addOrder(const string& name, Hotel* hotel);
     friend ostream& operator<<(ostream& out, const Invoice &invoice);
-
-
 };
 
 class Reservation final {
@@ -200,18 +200,58 @@ private:
     int id;
     DateTime checkInDate;
     DateTime checkOutDate;
-    vector<Room> rooms;
+    Room room;
     Invoice invoice;
     Hotel hotel;
 public:
-    Reservation(int id, DateTime checkInDate, DateTime checkOutDate, vector<Room> rooms, Invoice inv, Hotel hotel) : id(id), checkInDate(checkInDate),checkOutDate(checkOutDate), rooms(rooms), invoice(inv), hotel(hotel) {}
+    Reservation(int id, DateTime checkInDate, DateTime checkOutDate, Room room, Invoice inv, Hotel hotel) : id(id), checkInDate(checkInDate),checkOutDate(checkOutDate), room(room), invoice(inv), hotel(hotel) {}
     int getID() const { return id; }
     Hotel getHotel() { return hotel; }
     inline friend ostream& operator << (ostream& out, const Reservation &res);
-};
+}; //✅
 
 class ReservationSystem {
+private:
+    vector<Hotel> hotels;
+    vector<Reservation> reservations;
+public:
+    ReservationSystem(vector<Hotel> hotel = {}, vector<Reservation> res = {}) : hotels(hotel), reservations(res) {}
+    void addHotel(Hotel hotel){ hotels.emplace_back(hotel); }
+    void removeHotel(string name) {
+        for (auto it = hotels.begin(); it != hotels.end(); it++){
+            if((*it).getName() == name){
+                hotels.erase(it);
+                return;
+            }
+        }
+    }
+    Room findRoom(string name){
+        for (auto hotel : hotels){
+            if (hotel.getName() == name){
+                Room* emptyRoom = hotel.findEmpty();
+                if(emptyRoom != NULL){
+                    return *emptyRoom;
+                }else{
+                    try{
+                        throw logic_error("error!");
+                    }catch (exception) {
+                        cout << "Nie znaleziono wolnego pokoju w " << name << endl;
+                    }
+                }
+            }
+        }
+    }
 
+    void reservateRoom(int roomID, string name, Client client, DateTime checkin, DateTime checkout) {
+        for (auto hotel : hotels){
+            if(hotel.getName() == name){
+                hotel.changeAvailbility(roomID);
+                Room room = hotel.searchForRoom(roomID);
+            }
+        }
+
+        Reservation newReservation = Reservation(reservations.size()+1,checkin,checkout,)
+    }
 };
 
 class Application {
