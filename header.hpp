@@ -11,6 +11,7 @@ using namespace std;
 
 class Reservation;
 class Invoice;
+class Hotel;
 
 class Room final {
 private:
@@ -82,20 +83,20 @@ private:
     string name;
     string surname;
     int id;
-    vector<Reservation> reservations;
+    vector<Reservation*> reservations;
     Invoice* invoice;
 public:
-    Client(string name, string surname, int id, vector<Reservation> reservations, Invoice* invoice) : name(std::move(name)), surname(std::move(surname)), id(id),
+    Client(string name, string surname, int id, vector<Reservation*> reservations, Invoice* invoice) : name(std::move(name)), surname(std::move(surname)), id(id),
                                                                                                       reservations(std::move(reservations)), invoice(invoice) {}
     string getName() { return name; }
     string getSurname() { return surname; }
     int getID() const { return id; }
-    vector<Reservation> getReservations() { return reservations; }
+    vector<Reservation*> getReservations() { return reservations; }
     Invoice* getInvoice() { return invoice; }
     void setName(string newName) { name = std::move(newName); }
     void setSurname(string newSurname) { surname = std::move(newSurname); }
     void setID(int newID) { id = newID; }
-    void setReservations(vector<Reservation> newReservations) { reservations = std::move(newReservations); }
+    void setReservations(vector<Reservation*> newReservations) { reservations = std::move(newReservations); }
     void setInvoice(Invoice* newInvoice) { invoice = newInvoice; }
 
     friend ostream& operator << (ostream& out, const Client &client);
@@ -126,14 +127,24 @@ private:
     map<string,double> prices;
 public:
     explicit Menu(map<string,double> prices) : prices(std::move(prices)) {}
-    void addToMenu(const string& name, double price) noexcept { prices.insert({name,price}); }
-    void removeFromMenu(const string& name) noexcept { prices.erase(name); }
-    double checkPrice(const string& name) { return prices.at(name); }
+    void addToMenu(const string& name, double price) { prices.insert({name,price}); }
+    void removeFromMenu(const string& name) { prices.erase(name); }
+    double checkPrice(const string& name);
     friend ostream& operator << (ostream& out, const Menu &menu);
 }; //✅
 
-class Order {
+using AdditionalServices = Menu; //✅
 
+class Order {
+private:
+    Hotel* hotel;
+    pair<string,double> position;
+    bool done;
+public:
+    Order(const string& name, Hotel* hotel, bool done = false);
+    double getPrice() const { return position.second; }
+    void setDone(bool newDone) { done = newDone; }
+    friend ostream& operator << (ostream& out, const Order &order);
 };
 
 class Restaurant final {
@@ -142,10 +153,13 @@ private:
     stack<Order> orders;
 public:
     Restaurant(Menu menu, stack<Order> orders) : menu(std::move(menu)), orders(std::move(orders)) {}
+    Menu getMenu() { return menu; }
     Order doOrder();
-    void addOrder(Order order) { orders.push(order); }
-    friend ostream& operator << (ostream& out, const Restaurant &restaurant) { return out << restaurant.menu << restaurant.orders << endl; }
+    void addOrder(const Order& order) { orders.push(order); }
+    friend ostream& operator << (ostream& out, const Restaurant &restaurant) { return out << restaurant.menu << endl; }
 }; //G
+
+using Services = Restaurant; //✅
 
 class Hotel {
 private:
@@ -153,17 +167,29 @@ private:
     Address hotelAddress;
     vector<Room> rooms;
     vector<Opinion> opinions;
-    Restaurant hotelRestaurant;
+    Restaurant restaurant;
+    Services services;
 public:
-    Hotel(string name, Address address, vector<Room> rooms, vector<Opinion> opinions, Restaurant restaurant) : name(std::move(name)), hotelAddress(std::move(address)),
+    Hotel(string name, Address address, vector<Room> rooms, vector<Opinion> opinions, Restaurant restaurant, Services services) : name(std::move(name)), hotelAddress(std::move(address)),
                                                                                                                rooms(std::move(rooms)), opinions(std::move(opinions)),
-                                                                                                               hotelRestaurant(std::move(restaurant)) {}
+                                                                                                               restaurant(std::move(restaurant)),
+                                                                                                                                  services(std::move(services)) {}
+    Services getServices() { return services; }
+    Restaurant getRestaurant() { return restaurant; }
     void addRoom(const Room &newRoom){ rooms.push_back(newRoom); }
     int searchForRoom(int roomID);
     friend ostream& operator<<(ostream& out, const Hotel &hotel);
-}; //✅
+};
 
 class Invoice final {
+private:
+    vector<Order> orders;
+    double wholePrice;
+public:
+    explicit Invoice(vector<Order> orders = {}, double wholePrice = 0) : orders(std::move(orders)), wholePrice(wholePrice) {}
+    void addOrder(const string& name, Hotel* hotel);
+    friend ostream& operator<<(ostream& out, const Invoice &invoice);
+
 
 };
 
@@ -176,27 +202,21 @@ private:
     Invoice invoice;
 public:
     Reservation(int id, DateTime checkInDate, DateTime checkOutDate, vector<Room> rooms, Invoice inv) : id(id), checkInDate(checkInDate),checkOutDate(checkOutDate), rooms(rooms), invoice(inv) {}
-    int getID() { return id; }
+    int getID() const { return id; }
     inline friend ostream& operator<<(ostream& out, const Reservation &res) { return out << "ID: " << res.id << endl << "Data zameldownia: " << res.checkInDate << endl << "Data wymeldowania: " << res.checkOutDate << endl << "--- Pokoje ---" << endl << &res.rooms << endl; }
 }; // G
 
 class ReservationSystem {};
 class Application {};
 class Administrator {};
-class Services {
 
-};
-class AdditionalServices final {
-    virtual ~AdditionalServices() = default;
-
-};
 
 //https://stackoverflow.com/a/14861289 funkcja do centrowania outputu
 template<typename charT, typename traits = std::char_traits<charT> >
 class center_helper {
     std::basic_string<charT, traits> str_;
 public:
-    explicit center_helper(std::basic_string<charT, traits> str) : str_(str) {}
+    explicit center_helper(std::basic_string<charT, traits> str) : str_(std::move(str)) {}
     template<typename a, typename b>
     friend std::basic_ostream<a, b>& operator<<(std::basic_ostream<a, b>& s, const center_helper<a, b>& c);
 };
