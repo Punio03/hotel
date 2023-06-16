@@ -102,21 +102,25 @@ ostream& operator << (ostream& out, const Menu &menu) {
 
 // Order
 Order::Order(const string& name, Hotel *hotel, bool done, double price) : done(done), hotel(hotel), position({name,price}) {
-    if(price == 0.0){
-        auto* m = hotel->getRestaurant();
-        auto* as = hotel->getServices();
-        double newPrice = m->checkPrice(name);
-        if (newPrice == 0) newPrice = as->checkPrice(name);
-        else {
-            hotel->getRestaurant()->addOrder({name, hotel, false, newPrice});
-            position = {name, newPrice};
-            return;
+    try {
+        if (price == 0.0) {
+            auto *m = hotel->getRestaurant();
+            auto *as = hotel->getServices();
+            double newPrice = m->checkPrice(name);
+            if (newPrice == 0) newPrice = as->checkPrice(name);
+            else {
+                hotel->getRestaurant()->addOrder({name, hotel, false, newPrice});
+                position = {name, newPrice};
+                return;
+            }
+            if (newPrice == 0) position = {"Wrong position!", 0};
+            else {
+                hotel->getServices()->addOrder({name, hotel, false, newPrice});
+                position = {name, newPrice};
+            }
         }
-        if (newPrice == 0) position = {"Wrong position!", 0};
-        else {
-            hotel->getServices()->addOrder({name, hotel, false, newPrice});
-            position = {name, newPrice};
-        }
+    } catch (exception &e){
+        cerr << "Order" << e.what() << endl;
     }
 }
 
@@ -143,16 +147,17 @@ int Hotel::searchForRoom(int roomID) {
 
 ostream& operator << (ostream& out, const Hotel &hotel) {
     for(auto room : hotel.rooms) out << *room << endl;
+    for(auto opinion : hotel.opinions) out << *opinion << endl;
     return out;
 }
 
+
+// Invoice
 void Invoice::addOrder(Order* order) {
     wholePrice += order->getPrice();
     orders.emplace_back(order);
 }
 
-
-// Invoice
 ostream& operator << (ostream& out, const Invoice &invoice) {
     out << "----- Invoice -----" << endl;
     out << "Whole price: " << invoice.wholePrice << "$" << endl;
@@ -169,6 +174,58 @@ ostream& operator << (ostream &out, const Reservation &res) {
     << "--- Pokoje ---" << endl << *res.room << endl;
 }
 
+
+// Reservation System
+void ReservationSystem::reservateRoom(int roomID, const string& name, Client *client, DateTime checkin, DateTime checkout) {
+    for (auto hotel : hotels){
+        if(hotel->getName() == name && hotel->getRooms()[hotel->searchForRoom(roomID)]->getAvailable()){
+            hotel->changeAv(roomID);
+            vector<Room*> vec = hotel->getRooms();
+            Room* room = vec[hotel->searchForRoom(roomID)];
+            auto* newReservation = new Reservation(reservations.size(),checkin,checkout,room,new Invoice{},hotel);
+            reservations.emplace_back(newReservation);
+            client->addReservation(newReservation);
+            client->addOrder(name, (checkin-checkout)*room->getPrice(), newReservation->getID());
+            return;
+        }
+    }
+    cerr << "reservateRoom : nie udało się złożyć rezerwacji na pokój nr: " << roomID << endl;
+}
+
+Room ReservationSystem::findRoom(const string &name) {
+    for (auto hotel : hotels){
+        if (hotel->getName() == name){
+            Room* emptyRoom = hotel->findEmpty();
+            if(emptyRoom != nullptr){
+                return *emptyRoom;
+            }else{
+                try{
+                    throw logic_error("error!");
+                }catch (exception &e) {
+                    cout << "Nie znaleziono wolnego pokoju w " << name << endl;
+                }
+            }
+        }
+    }
+    return {0, 0, 0};
+}
+
+ostream& operator << (ostream& out, ReservationSystem& rs){
+    for(auto hotel : rs.hotels) { out << *hotel; };
+    for(auto reservation : rs.reservations) { out << *reservation; }
+    return out;
+}
+
+void ReservationSystem::removeHotel(const string &name) {
+    for (auto it = hotels.begin(); it != hotels.end(); it++){
+        if((*it)->getName() == name){
+            hotels.erase(it);
+            return;
+        }
+    }
+}
+
+
 // Application
 
 int Application::commands(){
@@ -177,48 +234,55 @@ int Application::commands(){
         cout << "Wrong login details!" << endl;
         return 1;
     }
-    // Klient Jakub Malczak
-    auto* klient1 = new Client{"Jakub", "Malczak", 0, new Invoice{}};
-    // Klient Piotr Stachowicz
-    auto* klient2 = new Client{"Piotr", "Stachowicz", 1, new Invoice{}};
-    // Hotel
-    Menu* menu1 = new Menu();
-    menu1->addToMenu("Kotlet", 15.00);
-    menu1->addToMenu("Frytki", 3.00);
-    menu1->addToMenu("Cola", 5.00);
-    menu1->addToMenu("Pizza", 20.00);
-    stack<Order> orders1 = {};
-    stack<Order> orders2 = {};
-    auto* restaurant1 = new Restaurant(menu1, orders1);
-    auto* menu2 = new Menu();
-    auto* services1 = new Services{menu2, orders2};
-    services1->getMenu()->addToMenu("Sauna",14.00);
-    services1->getMenu()->addToMenu("Basen",20.00);
-    services1->getMenu()->addToMenu("Buffet",14.00);
-    auto *hotel1 = new Hotel{"Neptune",Address{"Poland","Romualda","47-201","Gdansk","424242"},restaurant1,services1};
-    // Pokoje
-    for(int i = 0; i < 100; i++){
-        Room* room = new Room{i,1,100};
-        hotel1->addRoom(room);
+    try {
+        // Klient Jakub Malczak
+        auto *klient1 = new Client{"Jakub", "Malczak", 0, new Invoice{}};
+        // Klient Piotr Stachowicz
+        auto *klient2 = new Client{"Piotr", "Stachowicz", 1, new Invoice{}};
+        // Hotel
+        Menu *menu1 = new Menu();
+        menu1->addToMenu("Kotlet", 15.00);
+        menu1->addToMenu("Frytki", 3.00);
+        menu1->addToMenu("Cola", 5.00);
+        menu1->addToMenu("Pizza", 20.00);
+        stack<Order> orders1 = {};
+        stack<Order> orders2 = {};
+        auto *restaurant1 = new Restaurant(menu1, orders1);
+        auto *menu2 = new Menu();
+        auto *services1 = new Services{menu2, orders2};
+        services1->getMenu()->addToMenu("Sauna", 14.00);
+        services1->getMenu()->addToMenu("Basen", 20.00);
+        services1->getMenu()->addToMenu("Buffet", 14.00);
+        auto *hotel1 = new Hotel{"Neptune", Address{"Poland", "Romualda", "47-201", "Gdansk", "424242"}, restaurant1,
+                                 services1};
+        // Pokoje
+        for (int i = 0; i < 5; i++) {
+            Room *room = new Room{i, 1, 100};
+            hotel1->addRoom(room);
+        }
+        rs->addHotel(hotel1);
+        // Daty rezerwacji Kuby
+        DateTime checkin1{2023, 12, 12};
+        DateTime checkout1{2023, 12, 14};
+        // Daty rezerwacji Piotrka
+        DateTime checkin2{2023, 11, 12};
+        DateTime checkout2{2023, 12, 14};
+        // Rezerwacja Kuby
+        rs->reservateRoom(0, "Neptune", klient1, checkin1, checkout1);
+        // Rezerwacja Piotrka
+        rs->reservateRoom(1, "Neptune", klient2, checkin2, checkout2);
+        cout << rs->findRoom("Neptune");
+        // Zamówienia Kuby
+        klient1->addOrder("Kotlet", 0, 0);
+        // Zamówienia Piotrka
+        klient2->addOrder("Pizza", 0, 1);
+        klient2->addOrder("Sauna", 0, 1);
+        // Wyniki
+        cout << *klient1 << endl;
+        cout << *klient2 << endl;
+        cout << *rs << endl;
+    } catch (exception &e){
+        cerr << "command" << e.what() << endl;
     }
-    rs->addHotel(hotel1);
-    // Daty rezerwacji Kuby
-    DateTime checkin1{2023,12,12};
-    DateTime checkout1{2023,12,14};
-    // Daty rezerwacji Piotrka
-    DateTime checkin2{2023,11,12};
-    DateTime checkout2{2023,12,14};
-    // Rezerwacja Kuby
-    rs->reservateRoom(1,"Neptune",klient1,checkin1,checkout1);
-    // Rezerwacja Piotrka
-    rs->reservateRoom(0,"Neptune",klient2,checkin2,checkout2);
-    // Zamówienia Kuby
-    klient1->addOrder("kotlet", 0, 0);
-    // Zamówienia Piotrka
-    klient2->addOrder("Pizza",0,1);
-    klient2->addOrder("Sauna",0,1);
-    // Wyniki
-    cout << *klient1 << endl;
-    cout << *klient2 << endl;
     return 0;
 }

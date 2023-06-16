@@ -222,12 +222,13 @@ private:
     Invoice* invoice;
     Hotel* hotel;
 public:
-    Reservation(int id, DateTime checkInDate, DateTime checkOutDate, Room* room, Invoice* inv, Hotel* hotel) : id(id), checkInDate(checkInDate),checkOutDate(checkOutDate), room(room), invoice(inv), hotel(hotel) {}
+    Reservation(int id, DateTime checkInDate, DateTime checkOutDate, Room* room, Invoice* inv, Hotel* hotel) : id(id), checkInDate(checkInDate),
+                                                                                                                checkOutDate(checkOutDate), room(room), invoice(inv), hotel(hotel) {}
     [[nodiscard]] int getID() const { return id; }
     [[nodiscard]] Room* getRoom() const { return room; }
     [[nodiscard]] Hotel* getHotel() const { return hotel; }
     [[nodiscard]] Invoice* getInvoice() const { return invoice; }
-    inline friend ostream& operator << (ostream& out, const Reservation &res);
+    friend ostream& operator << (ostream& out, const Reservation &res);
 }; //✅
 
 class ReservationSystem {
@@ -237,46 +238,10 @@ private:
 public:
     explicit ReservationSystem(vector<Hotel*> hotel = {}, vector<Reservation*> res = {}) : hotels(std::move(hotel)), reservations(std::move(res)) {}
     void addHotel(Hotel *hotel){ hotels.emplace_back(hotel); }
-    void removeHotel(const string& name) {
-        for (auto it = hotels.begin(); it != hotels.end(); it++){
-            if((*it)->getName() == name){
-                hotels.erase(it);
-                return;
-            }
-        }
-    }
-    Room findRoom(const string& name){
-        for (auto hotel : hotels){
-            if (hotel->getName() == name){
-                Room* emptyRoom = hotel->findEmpty();
-                if(emptyRoom != nullptr){
-                    return *emptyRoom;
-                }else{
-                    try{
-                        throw logic_error("error!");
-                    }catch (exception &e) {
-                        cout << "Nie znaleziono wolnego pokoju w " << name << endl;
-                    }
-                }
-            }
-        }
-        return {0, 0, 0};
-    }
-
-    void reservateRoom(int roomID, const string& name, Client *client, DateTime checkin, DateTime checkout) {
-        for (auto hotel : hotels){
-            if(hotel->getName() == name){
-                hotel->changeAv(roomID);
-                vector<Room*> vec = hotel->getRooms();
-                Room* room = vec[hotel->searchForRoom(roomID)];
-                auto* newReservation = new Reservation(reservations.size(),checkin,checkout,room,new Invoice{},hotel);
-                reservations.emplace_back(newReservation);
-                client->addReservation(newReservation);
-                auto* newOrder = client->addOrder(name, (checkin-checkout)*room->getPrice(), newReservation->getID());
-                return;
-            }
-        }
-    }
+    void removeHotel(const string& name);
+    Room findRoom(const string& name);
+    void reservateRoom(int roomID, const string& name, Client *client, DateTime checkin, DateTime checkout);
+    friend ostream& operator << (ostream& out, ReservationSystem& rs);
 };
 
 class Administrator final {
@@ -290,7 +255,7 @@ public:
     void addHotel(Hotel *hotel, ReservationSystem rs) { rs.addHotel(hotel); }
     void removeHotel(const string& name, ReservationSystem rs){ rs.removeHotel(name); }
     friend bool operator == (const vector<string>& vec, Administrator& admin) { return vec.front() == admin.login && vec.back() == admin.password; }
-};
+}; //✅
 
 class Application final {
 private:
@@ -302,6 +267,6 @@ public:
     Application(string login, string password, ReservationSystem* rs, Administrator* admin) : login(std::move(login)), password(std::move(password)), rs(rs)
                                                                                             , admin(admin) {};
     int commands();
-};
+}; //✅
 
 #endif //UNTITLED1_HEADER_HPP
