@@ -277,6 +277,9 @@ int Application::commands(){
         // Zamówienia Piotrka
         klient2->addOrder("Pizza", 0, 1);
         klient2->addOrder("Sauna", 0, 1);
+        // Opinie
+        klient1->addOpinion(10,"Super hotel",0);
+        klient2->addOpinion(9, "Fajny hotel, ale pizza slaba...", 1);
         // Wyniki
         cout << *klient1 << endl;
         cout << *klient2 << endl;
