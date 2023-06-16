@@ -8,5 +8,4 @@ include_directories(.)
 add_executable(hotel
         header.hpp
         main.cpp
-        module.cpp
-        )
+        module.cpp)
