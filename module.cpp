@@ -37,6 +37,31 @@ int operator - (DateTime &date1, DateTime &date2) {
     return (int)(n2 - n1);
 }
 
+bool operator <= (const DateTime& date1, const DateTime & date2) {
+    if(date1.year < date2.year) return true;
+    if(date1.year == date2.year){
+        if(date1.month < date2.month) return true;
+        if(date1.month == date2.month){
+            if(date1.day < date2.day) return true;
+            if(date1.day == date2.day) return true;
+            return false;
+        }
+        return false;
+    }
+    return false;
+}
+
+DateTime DateTime::operator ++ () {
+    day++;
+    if(day>monthDays[month-1]){
+        day= 1;
+        month++;
+        if(month>12){
+            year++;
+        }
+    }
+    return *this;
+}
 
 // Client
 ostream& operator << (ostream& out, const Client &client) {
@@ -228,6 +253,7 @@ void ReservationSystem::removeHotel(const string &name) {
 
 // Application
 
+// Można się tym pobawić tworząc swego rodzaju symulacje
 int Application::commands(){
     vector<string> loginDetails{login,password};
     if( loginDetails != *admin){
@@ -239,20 +265,23 @@ int Application::commands(){
         auto *klient1 = new Client{"Jakub", "Malczak", 0, new Invoice{}};
         // Klient Piotr Stachowicz
         auto *klient2 = new Client{"Piotr", "Stachowicz", 1, new Invoice{}};
-        // Hotel
+        // Menu
         Menu *menu1 = new Menu();
         menu1->addToMenu("Kotlet", 15.00);
         menu1->addToMenu("Frytki", 3.00);
         menu1->addToMenu("Cola", 5.00);
         menu1->addToMenu("Pizza", 20.00);
+        // Stosy zamówień dla restauracji i usług
         stack<Order> orders1 = {};
         stack<Order> orders2 = {};
         auto *restaurant1 = new Restaurant(menu1, orders1);
-        auto *menu2 = new Menu();
+        auto *menu2 = new AdditionalServices();
         auto *services1 = new Services{menu2, orders2};
         services1->getMenu()->addToMenu("Sauna", 14.00);
+        services1->getMenu()->addToMenu("Massage", 40.00);
         services1->getMenu()->addToMenu("Basen", 20.00);
         services1->getMenu()->addToMenu("Buffet", 14.00);
+        // Hotel
         auto *hotel1 = new Hotel{"Neptune", Address{"Poland", "Romualda", "47-201", "Gdansk", "424242"}, restaurant1,
                                  services1};
         // Pokoje
@@ -271,7 +300,6 @@ int Application::commands(){
         rs->reservateRoom(0, "Neptune", klient1, checkin1, checkout1);
         // Rezerwacja Piotrka
         rs->reservateRoom(1, "Neptune", klient2, checkin2, checkout2);
-        cout << rs->findRoom("Neptune");
         // Zamówienia Kuby
         klient1->addOrder("Kotlet", 0, 0);
         // Zamówienia Piotrka
@@ -281,8 +309,15 @@ int Application::commands(){
         klient1->addOpinion(10,"Super hotel",0);
         klient2->addOpinion(9, "Fajny hotel, ale pizza slaba...", 1);
         // Wyniki
+        cout << "---------------Clients------------" << endl;
         cout << *klient1 << endl;
         cout << *klient2 << endl;
+        cout << "---------------Reservation System------------" << endl;
+        cout << *rs << endl;
+        update();
+        update();
+        update();
+        cout << "---------------Reservation System------------" << endl;
         cout << *rs << endl;
     } catch (exception &e){
         cerr << "command" << e.what() << endl;

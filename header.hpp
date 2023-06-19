@@ -34,7 +34,7 @@ public:
     void setPrice(int newPrice) { price = newPrice; }
     void setAvailable(bool newAvailable) { available = newAvailable; }
     friend ostream& operator << (ostream& out, const Room &room);
-}; //✅
+};
 
 class Address final {
 private:
@@ -60,7 +60,7 @@ public:
     void setTelephoneNumber(string newPhoneNumber) { phoneNumber = std::move(newPhoneNumber); }
     friend ostream& operator << (ostream& out, const Address &address);
     friend bool operator == (Address &address1, Address &address2) { return address1.addressInfo() == address2.addressInfo(); }
-}; //✅
+};
 
 class DateTime final {
 private:
@@ -78,8 +78,10 @@ public:
     void setDay(int newDay) { day = newDay; }
     void setMonth(int newMonth) { month = newMonth; }
     friend int operator - (DateTime &date1, DateTime &date2);
+    DateTime operator ++ ();
+    friend bool operator <= (const DateTime& date1, const DateTime & date2);
     friend ostream& operator << (ostream& out, const DateTime &date) { return out << date.day << '.' << date.month << '.' << date.year << endl; }
-}; //✅
+};
 
 class Client final {
 private:
@@ -105,7 +107,7 @@ public:
     Order* addOrder(const string& itemName, double price, int reservationID);
     void addOpinion(int rating, const string& comment, int reservationID);
     friend ostream& operator << (ostream& out, const Client &client);
-}; //✅
+};
 
 class Opinion final {
 private:
@@ -125,7 +127,7 @@ public:
     void setClient(int newClientID) { clientID = newClientID; }
     void setReservation(int newReservationID) { reservationID = newReservationID; }
     friend ostream& operator << (ostream& out, const Opinion &opinion);
-}; //✅
+};
 
 class Menu final {
 private:
@@ -137,9 +139,9 @@ public:
     void removeFromMenu(const string& name) { prices.erase(name); }
     double checkPrice(const string& name);
     friend ostream& operator << (ostream& out, const Menu &menu);
-}; //✅
+};
 
-using AdditionalServices = Menu; //✅
+using AdditionalServices = Menu;
 
 class Order final {
 private:
@@ -157,7 +159,7 @@ public:
     void setHotel(Hotel* newHotel) { hotel = newHotel; }
     void setDone(bool newDone) { done = newDone; }
     friend ostream& operator << (ostream& out, const Order &order);
-}; //✅
+};
 
 class Restaurant final {
 private:
@@ -165,15 +167,15 @@ private:
     stack<Order> orders;
 public:
     explicit Restaurant(Menu* menu = {}, stack<Order> orders = {}) : menu(menu), orders(std::move(orders)) {}
-    [[nodiscard]] Menu* getMenu() const { return menu; } // Segfault xD
+    [[nodiscard]] Menu* getMenu() const { return menu; }
     [[nodiscard]] stack<Order> getOrders() const { return orders; }
     Order doOrder();
     double checkPrice(const string& name) { return menu->checkPrice(name); }
     void addOrder(const Order& order) { orders.push(order); }
     friend ostream& operator << (ostream& out, const Restaurant &restaurant) { return out << restaurant.menu; }
-}; //✅
+};
 
-using Services = Restaurant; //✅
+using Services = Restaurant;
 
 class Hotel final {
 private:
@@ -201,7 +203,7 @@ public:
     void addRoom(Room *newRoom){ rooms.push_back(newRoom); }
     int searchForRoom(int roomID);
     friend ostream& operator<<(ostream& out, const Hotel &hotel);
-}; //✅
+};
 
 class Invoice final {
 private:
@@ -228,8 +230,9 @@ public:
     [[nodiscard]] Room* getRoom() const { return room; }
     [[nodiscard]] Hotel* getHotel() const { return hotel; }
     [[nodiscard]] Invoice* getInvoice() const { return invoice; }
+    [[nodiscard]] DateTime getCheckOutDate() const { return checkOutDate; }
     friend ostream& operator << (ostream& out, const Reservation &res);
-}; //✅
+};
 
 class ReservationSystem {
 private:
@@ -242,6 +245,13 @@ public:
     Room findRoom(const string& name);
     void reservateRoom(int roomID, const string& name, Client *client, DateTime checkin, DateTime checkout);
     friend ostream& operator << (ostream& out, ReservationSystem& rs);
+    void update(DateTime cDate){
+        for(auto reservation : reservations){
+            if(cDate <= reservation->getCheckOutDate()){
+                reservation->getRoom()->setAvailable(true);
+            }
+        }
+    }
 };
 
 class Administrator final {
@@ -255,7 +265,7 @@ public:
     void addHotel(Hotel *hotel, ReservationSystem rs) { rs.addHotel(hotel); }
     void removeHotel(const string& name, ReservationSystem rs){ rs.removeHotel(name); }
     friend bool operator == (const vector<string>& vec, Administrator& admin) { return vec.front() == admin.login && vec.back() == admin.password; }
-}; //✅
+};
 
 class Application final {
 private:
@@ -263,10 +273,15 @@ private:
     ReservationSystem* rs;
     string login;
     string password;
+    DateTime currentDate;
 public:
-    Application(string login, string password, ReservationSystem* rs, Administrator* admin) : login(std::move(login)), password(std::move(password)), rs(rs)
-                                                                                            , admin(admin) {};
+    Application(string login, string password, ReservationSystem* rs, Administrator* admin, DateTime date) : login(std::move(login)), password(std::move(password)), rs(rs)
+                                                                                            , admin(admin), currentDate(date) {};
     int commands();
-}; //✅
+    void update() {
+        ++currentDate;
+        rs->update(currentDate);
+    }
+};
 
 #endif //UNTITLED1_HEADER_HPP
